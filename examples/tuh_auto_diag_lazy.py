@@ -24,19 +24,19 @@ from braindecode.torch_ext.optimizers import AdamW
 from braindecode.models.deep4 import Deep4Net
 
 # my imports
-from braindecodelazy.experiments.monitors_lazy_loading import LazyMisclassMonitor, \
+from braindecode_lazy.experiments.monitors_lazy_loading import LazyMisclassMonitor, \
     RMSEMonitor, CroppedDiagnosisMonitor, CroppedAgeRegressionDiagnosisMonitor, \
-    compute_preds_per_trial
-from braindecodelazy.datautil.iterators import LoadCropsFromTrialsIterator
-from braindecodelazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
-from braindecodelazy.datasets.tuh import Tuh, TuhSubset
+    compute_preds_per_trial, RAMMonitor
+from braindecode_lazy.datautil.iterators import LoadCropsFromTrialsIterator
+from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
+from braindecode_lazy.datasets.tuh import Tuh, TuhSubset
 from examples.utils import parse_run_args
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logging.info("test")
 
-sys.path.insert(1, "/home/gemeinl/code/braindecodelazy/")
+sys.path.insert(1, "/home/gemeinl/code/braindecode_lazy/")
 
 
 def nll_loss_on_mean(preds, targets):
@@ -184,6 +184,7 @@ def run_exp(train_folder,
 
     monitors = []
     monitors.append(LossMonitor())
+    monitors.append(RAMMonitor())
     monitors.append(RuntimeMonitor())
     if task == "age":
         monitors.append(CroppedAgeRegressionDiagnosisMonitor(input_time_length, n_preds_per_input))
@@ -192,8 +193,10 @@ def run_exp(train_folder,
         monitors.append(LazyMisclassMonitor(col_suffix='sample_misclass'))
         monitors.append(CroppedDiagnosisMonitor(input_time_length, n_preds_per_input))
 
+    # TODO: can this be improved?
     n_updates_per_epoch = sum([1 for _ in iterator.get_batches(train_subset, shuffle=True)])
     n_updates_per_period = n_updates_per_epoch * max_epochs
+    logging.info("there are {} updates per epoch".format(n_updates_per_epoch))
 
     adamw = AdamW(model.parameters(), init_lr, weight_decay=weight_decay)
     scheduler = CosineAnnealing(n_updates_per_period)
