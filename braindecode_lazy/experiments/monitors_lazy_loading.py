@@ -1,6 +1,8 @@
 from sklearn.metrics import roc_auc_score, mean_squared_error
 import numpy as np
+import psutil
 import time
+import os
 
 from braindecode.datautil.iterators import _compute_start_stop_block_inds
 
@@ -76,6 +78,22 @@ class LazyMisclassMonitor(object):
         return {column_name: float(misclass)}
 
 
+class RAMMonitor(object):
+    def __init__(self):
+        pass
+
+    def monitor_epoch(self):
+        pass
+
+    def monitor_set(self, setname, all_preds, all_losses,
+                    all_batch_sizes, all_targets, dataset):
+        out = {}
+        process = psutil.Process(os.getpid())
+        usage = process.memory_info().rss
+        out.update({"RAM usage": usage/1000000000})
+        return out
+
+
 class RMSEMonitor(object):
     """
     Compute trialwise misclasses from predictions for crops for non-dense predictions.
@@ -110,7 +128,6 @@ class RMSEMonitor(object):
         mse_rec = mean_squared_error(y_pred=preds, y_true=y_orig)
         rmse_rec = np.sqrt(mse_rec)
         out.update({"{}_rmse_rec".format(setname): rmse_rec})
-
         return out
 
 
