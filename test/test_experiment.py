@@ -3,7 +3,7 @@ import numpy as np
 
 # TODO: implement age tests
 
-DATA_FOLDER = "/home/gemeinl/code/braindecodelazy/test/files/"
+DATA_FOLDER = "/home/gemeinl/code/braindecode_lazy/test/files/"
 
 
 def test_run_deep_pathological():
