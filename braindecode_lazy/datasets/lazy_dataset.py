@@ -3,9 +3,8 @@ from abc import ABC, abstractmethod
 
 class LazyDataset(ABC):
     """ Class implementing an abstract lazy data set. Custom lazy data sets
-    can inherit from this class and have to implement a __len__ and a
-    __getitem__ function that returns the number of examples and a two-tuple
-    of an example and its label, respectively.
+    can inherit from this class. they have to override files, X and y as well
+    as the load_lazy function.
     """
     def __init__(self):
         self.files = "Not implemented: a list of all file names in the dataset"
