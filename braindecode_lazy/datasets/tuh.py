@@ -1,6 +1,5 @@
+import pandas as pd
 import numpy as np
-import h5py
-import json
 import sys
 
 # avoid duplicates for reading file names by this ugly import
@@ -9,11 +8,9 @@ from brainfeatures.data_set.tuh_abnormal import _read_all_file_names
 
 
 class Tuh(object):
-    def __init__(self, data_folder, n_recordings=None, target="pathological",
-                 extension=".npy"):
+    def __init__(self, data_folder, n_recordings=None, target="pathological"):
         self.task = target
-        self.extension = extension
-        self.files = _read_all_file_names(data_folder, extension=extension,
+        self.files = _read_all_file_names(data_folder, extension=".h5",
                                           key="time")
         if n_recordings is not None:
             self.files = self.files[:n_recordings]
@@ -23,21 +20,16 @@ class Tuh(object):
     def load(self, files):
         X, y = [], []
         for file_ in files:
-            if self.extension == ".npy":
-                x = np.load(file_).astype(np.float32)
-            else:
-                assert self.extension == ".h5", "unknown file format"
-                f = h5py.File(file_, "r")
-                x = f["signals"][:]
-                f.close()
+            x = pd.read_hdf(file_, key="data")
             xdim, ydim = x.shape
             if xdim > ydim:
                 x = x.T
             x = np.array(x).astype(np.float32)
             X.append(x)
-            json_file = file_.replace(self.extension, ".json")
-            with open(json_file, "r") as f:
-                info = json.load(f)
+
+            info_df = pd.read_hdf(file_, key="info")
+            assert len(info_df) == 1, "too many rows in info df"
+            info = info_df.iloc[-1].to_dict()
             y_ = info[self.task]
             if self.task == "gender":
                 y_ = 0 if info["gender"] == "M" else 1
