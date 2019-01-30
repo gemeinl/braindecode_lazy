@@ -83,15 +83,15 @@ class RAMMonitor(object):
         pass
 
     def monitor_epoch(self):
-        pass
-
-    def monitor_set(self, setname, all_preds, all_losses,
-                    all_batch_sizes, all_targets, dataset):
         out = {}
         process = psutil.Process(os.getpid())
         usage = process.memory_info().rss
         out.update({"RAM usage": usage/1000000000})
         return out
+
+    def monitor_set(self, setname, all_preds, all_losses,
+                    all_batch_sizes, all_targets, dataset):
+        return {}
 
 
 class RMSEMonitor(object):
@@ -220,19 +220,12 @@ class CroppedAgeRegressionDiagnosisMonitor(object):
         mean_preds_per_trial = [np.mean(preds, axis=(0, 2)) for preds in
                                 preds_per_trial]
         mean_preds_per_trial = np.array(mean_preds_per_trial).reshape(-1)
-        #print(mean_preds_per_trial)
-        #print(mean_preds_per_trial.max() - mean_preds_per_trial.min())
         y = dataset.get_targets()
-        #print(y)
-        #for pred_true in zip(mean_preds_per_trial, y):
-        #    print(pred_true)
         assert mean_preds_per_trial.shape == y.shape
         mse = mean_squared_error(y_pred=mean_preds_per_trial, y_true=y)
         rmse = np.sqrt(mse)
         
         out = {}
-        #column_name = "{:s}_mse".format(setname)
-        #out = {column_name: float(mse)}
         column_name = "{:s}_rmse".format(setname)
         out.update({column_name: float(rmse)})
         return out
