@@ -112,35 +112,34 @@ def read_network_results(directory, models, decoding_tasks):
 
 
 def parse_run_args():
-    args = [
-        ['batch_size', int],
-        ['cuda', bool],
-        ['eval_folder', str],
-        ['final_conv_length', int],
-        ['init_lr', float],
-        ['input_time_length', int],
-        ['lazy_loading', bool],
-        ['max_epochs', int],
-        ['model_constraint', str],
-        ['model_name', str],
-        ['n_chan_factor', float],
-        ['n_chans', int],
-        ['n_folds', int],
-        ['n_recordings', str],
-        ['n_start_chans', int],
-        ['num_workers', int],
-        ['result_folder', str],
-        ['seed', int],
-        ['shuffle_folds', bool],
-        ['stride_before_pool', bool],
-        ['task', str],
-        ['train_folder', str],
-        ['weight_decay', float],
-    ]
-
     parser = argparse.ArgumentParser()
-    for arg, type_ in args:
-        parser.add_argument("--" + arg, required=False, type=type_)
+    parser.add_argument("--batch_size", required=True, type=int)
+    parser.add_argument('--cuda', dest='cuda', action='store_true')
+    parser.add_argument('--no-cuda', dest='cuda', action='store_false')
+    parser.add_argument("--eval_folder", required=True, type=str)
+    parser.add_argument("--final_conv_length", required=True, type=int)
+    parser.add_argument("--init_lr", required=True, type=float)
+    parser.add_argument("--input_time_length", required=True, type=int)
+    parser.add_argument('--lazy_loading', dest='lazy_loading', action='store_true')
+    parser.add_argument('--no-lazy_loading', dest='lazy_loading', action='store_false')
+    parser.add_argument("--max_epochs", required=True, type=int)
+    parser.add_argument("--model_constraint", required=True, type=str)
+    parser.add_argument("--model_name", required=True, type=str)
+    parser.add_argument("--n_chan_factor", required=True, type=float)
+    parser.add_argument("--n_chans", required=True, type=int)
+    parser.add_argument("--n_folds", required=True, type=int)
+    parser.add_argument("--n_recordings", required=True, type=str)  # parse yourself
+    parser.add_argument("--n_start_chans", required=True, type=int)
+    parser.add_argument("--num_workers", required=True, type=int)
+    parser.add_argument("--result_folder", required=True, type=str)
+    parser.add_argument("--seed", required=True, type=int)
+    parser.add_argument('--shuffle_folds', dest='shuffle_folds', action='store_true')
+    parser.add_argument('--no-shuffle_folds', dest='shuffle_folds', action='store_false')
+    parser.add_argument('--stride_before_pool', dest='stride_before_pool', action='store_true')
+    parser.add_argument('--no-stride_before_pool', dest='stride_before_pool', action='store_false')
+    parser.add_argument("--task", required=True, type=str)
+    parser.add_argument("--train_folder", required=True, type=str)
+    parser.add_argument("--weight_decay", required=True, type=float)
 
     known, unknown = parser.parse_known_args()
     if unknown:
