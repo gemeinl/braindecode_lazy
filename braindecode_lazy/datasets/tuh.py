@@ -10,8 +10,8 @@ from brainfeatures.data_set.tuh_abnormal import _read_all_file_names
 class Tuh(object):
     def __init__(self, data_folder, n_recordings=None, target="pathological"):
         self.task = target
-        self.files = _read_all_file_names(data_folder, extension=".h5",
-                                          key="time")
+        assert data_folder.endswith("/"), "data_folder has to end with '/'"
+        self.files = _read_all_file_names(data_folder, ".h5", key="time")
         if n_recordings is not None:
             self.files = self.files[:n_recordings]
 
@@ -19,7 +19,7 @@ class Tuh(object):
 
     def load(self, files):
         X, y = [], []
-        for file_ in files:
+        for i, file_ in enumerate(files):
             x = pd.read_hdf(file_, key="data")
             xdim, ydim = x.shape
             if xdim > ydim:
