@@ -1,4 +1,4 @@
-from examples.tuh_auto_diag_lazy_without_memleak import run_exp
+from examples.tuh_auto_diag_lazy_without_memleak import setup_exp
 import numpy as np
 
 # TODO: implement age tests
@@ -35,21 +35,24 @@ def test_run_shallow_pathological():
         "stride_before_pool": None,
     }
 
-    exp = run_exp(**kwargs)
+    exp = setup_exp(**kwargs)
+    # for testing purposes, reset rng after each
+    exp.iterator.reset_rng_after_each_batch = True
+    exp.run()
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_loss),
-        np.array([5.6385579109191895, 0.9429725408554077, 0.9677126407623291]),
+        np.array([5.638560771942139, 0.9429671168327332, 0.9720389246940613]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.test_loss),
-        np.array([15.66110610961914, 5.81709098815918, 6.502216339111328]),
+        np.array([15.661099433898926, 5.816369533538818, 6.5150346755981445]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_sample_misclass),
-        np.array([0.7478788019287834, 0.4502619621661721, 0.44074554896142437]),
+        np.array([0.7478788019287834, 0.450447422106825, 0.44304061572700293]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
@@ -97,21 +100,24 @@ def test_run_shallow_gender():
         "stride_before_pool": None,
     }
 
-    exp = run_exp(**kwargs)
+    exp = setup_exp(**kwargs)
+    # for testing purposes, reset rng after each
+    exp.iterator.reset_rng_after_each_batch = True
+    exp.run()
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_loss),
-        np.array([4.7572245597839355, 2.673903465270996, 1.164989948272705]),
+        np.array([4.757225513458252, 2.666571617126465, 1.1629936695098877]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.test_loss),
-        np.array([3.700687329910579e-07, 2.1586083676083945e-07, 1.9874266854458256e-06]),
+        np.array([3.6769267808267614e-07, 2.169014123865054e-07, 2.007234570555738e-06]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_sample_misclass),
-        np.array([0.7478788019287834, 0.5813125927299703, 0.3513654488130564]),
+        np.array([0.7478788019287834, 0.5806750741839762, 0.35107566765578635]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(

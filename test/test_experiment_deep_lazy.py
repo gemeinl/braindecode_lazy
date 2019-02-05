@@ -1,4 +1,4 @@
-from examples.tuh_auto_diag_lazy_without_memleak import run_exp
+from examples.tuh_auto_diag_lazy_without_memleak import setup_exp
 import numpy as np
 
 # TODO: implement age tests
@@ -35,21 +35,24 @@ def test_run_deep_pathological():
         "stride_before_pool": True,
     }
 
-    exp = run_exp(**kwargs)
+    exp = setup_exp(**kwargs)
+    # for testing purposes, reset rng after each
+    exp.iterator.reset_rng_after_each_batch = True
+    exp.run()
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_loss),
-        np.array([1.3472893238067627, 143.13360595703125, 20.755834579467773]),
+        np.array([1.3472894430160522, 133.92396545410156, 15.145020484924316]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.test_loss),
-        np.array([1.7500501871109009, 0.0, 0.0]),
+        np.array([1.7500500679016113, 0.0, 0.0]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_sample_misclass),
-        np.array([0.4353356481481482, 0.25, 0.2620949074074074]),
+        np.array([0.4353356481481482, 0.25, 0.26443287037037033]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
@@ -97,16 +100,19 @@ def test_run_deep_gender():
         "stride_before_pool": True,
     }
 
-    exp = run_exp(**kwargs)
+    # for testing purposes, reset rng after each
+    exp = setup_exp(**kwargs)
+    exp.iterator.reset_rng_after_each_batch = True
+    exp.run()
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.train_loss),
-        np.array([0.9724490642547607, 658.634521484375, 228.96507263183594]),
+        np.array([0.9724488258361816, 621.3842163085938, 233.0751190185547]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
         np.array(exp.epochs_df.test_loss),
-        np.array([3.3819427490234375, 0.0, 0.0]),
+        np.array([3.381948232650757, 0.0, 0.0]),
         atol=1e-3, rtol=1e-3)
 
     np.testing.assert_allclose(
