@@ -25,18 +25,28 @@ def load_lazy_panads_h5_data(fname, start, stop):
 
 
 class TuhLazy(LazyDataset):
-    """Tuh lazy data set. """
+    """Tuh lazy data set. Expects h5 files with a "data" group stored in
+    transpose (n_times x n_channels) as well as a "info" group holding
+    pathology, gender, age for decoding and n_samples for creating crops.
+
+    Parameters
+    ----------
+    data_folder: str
+        parent directory of TUH Abnormal Corpus. Expects sub folders specifying
+        train and test subset as well as normal and abnormal
+
+    """
     def __init__(self, data_folder, n_recordings=None, target="pathological"):
         self.task = target
         assert data_folder.endswith("/"), "data_folder has to end with '/'"
-        self.files = _read_all_file_names(data_folder, ".h5", key="time")
+        self.file_paths = _read_all_file_names(data_folder, ".h5", key="time")
 
         if n_recordings is not None:
-            self.files = self.files[:n_recordings]
+            self.file_paths = self.file_paths[:n_recordings]
 
-        self.X, self.y = self.load(self.files)
+        self.X, self.y = self.pre_load(self.file_paths)
 
-    def load(self, files):
+    def pre_load(self, files):
         X, y = [], []
         for file_ in files:
             # pandas read is slow
@@ -63,12 +73,20 @@ class TuhLazy(LazyDataset):
 
 
 class TuhLazySubset(LazyDataset):
-    """ A subset of a tuh lazy data set based on indices."""
+    """ A subset of a tuh lazy data set based on indices.
+
+    Parameters
+    ----------
+    dataset: class LazyDataset
+        A data set that supports lazy loading
+    indices: list
+        A list of integers used to create subset of the data set
+    """
     def __init__(self, dataset, indices):
         self.task = dataset.task
-        self.files = np.array([dataset.files[i] for i in indices])
+        self.file_paths = np.array([dataset.file_paths[i] for i in indices])
 
-        self.X, self.y = dataset.load(self.files)
+        self.X, self.y = dataset.pre_load(self.file_paths)
 
     def load_lazy(self, fname, start, stop):
         return load_lazy_panads_h5_data(fname, start, stop)
