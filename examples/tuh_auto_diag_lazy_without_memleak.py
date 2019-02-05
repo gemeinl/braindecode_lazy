@@ -26,7 +26,7 @@ from braindecode.models.deep4 import Deep4Net
 from braindecode_lazy.experiments.monitors_lazy_loading import LazyMisclassMonitor, \
     RMSEMonitor, CroppedDiagnosisMonitor, CroppedAgeRegressionDiagnosisMonitor, \
     compute_preds_per_trial, RAMMonitor
-from braindecode_lazy.datautil.iterators import LoadCropsFromTrialsIterator
+from braindecode_lazy.datautil.iterators import LazyCropsFromTrialsIterator
 from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
 from braindecode_lazy.experiments.experiment_fixed import Experiment  # !!!!!!
 from braindecode_lazy.datasets.tuh import Tuh, TuhSubset
@@ -49,7 +49,7 @@ def mse_loss_on_mean(preds, targets):
     return F.mse_loss(mean_preds, targets)
 
 
-def run_exp(train_folder,
+def setup_exp(train_folder,
             n_recordings,
             n_chans,
             model_name,
@@ -174,9 +174,11 @@ def run_exp(train_folder,
             test_subset = Tuh(eval_folder, target=task)
 
     if lazy_loading is True:
-        iterator = LoadCropsFromTrialsIterator(
+        iterator = LazyCropsFromTrialsIterator(
             input_time_length, n_preds_per_input, batch_size,
-            seed=seed, num_workers=num_workers, check_preds_smaller_trial_len=False)  # True!
+            seed=seed, num_workers=num_workers,
+            reset_rng_after_each_batch=False,
+            check_preds_smaller_trial_len=False)  # True!
     else:
         iterator = CropsFromTrialsIterator(batch_size, input_time_length,
                                            n_preds_per_input, seed)
@@ -193,9 +195,9 @@ def run_exp(train_folder,
         monitors.append(LazyMisclassMonitor(col_suffix='sample_misclass'))
 
     if lazy_loading:
-        n_updates_per_epoch = iterator.get_n_updates_per_epoch(train_subset, shuffle=False)
+        n_updates_per_epoch = len(iterator.get_batches(train_subset, shuffle=False))
     else:
-        n_updates_per_epoch = sum([1 for _ in iterator.get_batches(train_subset, shuffle=True)])
+        n_updates_per_epoch = sum([1 for _ in iterator.get_batches(train_subset, shuffle=False)])
     n_updates_per_period = n_updates_per_epoch * max_epochs
     logging.info("there are {} updates per epoch".format(n_updates_per_epoch))
 
@@ -221,7 +223,6 @@ def run_exp(train_folder,
         do_early_stop=False,
         reset_after_second_run=False
     )
-    exp.run()
     return exp
 
 
@@ -296,7 +297,8 @@ def main():
     kwargs = parse_run_args()
     print(kwargs)
     start_time = time.time()
-    exp = run_exp(**kwargs)
+    exp = setup_exp(**kwargs)
+    exp.run()
     end_time = time.time()
     run_time = end_time - start_time
     logging.info("Experiment runtime: {:.2f} sec".format(run_time))
