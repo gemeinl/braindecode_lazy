@@ -419,8 +419,7 @@ class Experiment(object):
                 if all_preds is None:
                     assert all_targets is None
                     # first batch size is largest
-                    max_size, n_ch, input_time_length, _ = inputs.shape
-                    _, n_classes, n_preds_per_input = preds.shape
+                    max_size, n_classes, n_preds_per_input = preds.shape
                     # pre-allocate memory for all predictions and targets
                     all_preds = np.nan * np.ones(
                         (n_batches * max_size, n_classes, n_preds_per_input),
