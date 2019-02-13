@@ -1,4 +1,4 @@
-from examples.tuh_auto_diag_lazy_without_memleak import setup_exp
+from examples.tuh_auto_diag import setup_exp
 import numpy as np
 
 # TODO: implement age tests
