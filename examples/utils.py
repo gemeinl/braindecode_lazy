@@ -120,8 +120,10 @@ def parse_run_args():
     parser.add_argument("--final_conv_length", required=True, type=int)
     parser.add_argument("--init_lr", required=True, type=float)
     parser.add_argument("--input_time_length", required=True, type=int)
-    parser.add_argument('--lazy_loading', dest='lazy_loading', action='store_true')
-    parser.add_argument('--no-lazy_loading', dest='lazy_loading', action='store_false')
+    parser.add_argument('--lazy_loading', dest='lazy_loading',
+                        action='store_true')
+    parser.add_argument('--no-lazy_loading', dest='lazy_loading',
+                        action='store_false')
     parser.add_argument("--max_epochs", required=True, type=int)
     parser.add_argument("--model_constraint", required=True, type=str)
     parser.add_argument("--model_name", required=True, type=str)
@@ -133,16 +135,21 @@ def parse_run_args():
     parser.add_argument("--num_workers", required=True, type=int)
     parser.add_argument("--result_folder", required=True, type=str)
     parser.add_argument("--seed", required=True, type=int)
-    parser.add_argument('--shuffle_folds', dest='shuffle_folds', action='store_true')
-    parser.add_argument('--no-shuffle_folds', dest='shuffle_folds', action='store_false')
-    parser.add_argument('--stride_before_pool', dest='stride_before_pool', action='store_true')
-    parser.add_argument('--no-stride_before_pool', dest='stride_before_pool', action='store_false')
+    parser.add_argument('--shuffle_folds', dest='shuffle_folds',
+                        action='store_true')
+    parser.add_argument('--no-shuffle_folds', dest='shuffle_folds',
+                        action='store_false')
+    parser.add_argument('--stride_before_pool', dest='stride_before_pool',
+                        action='store_true')
+    parser.add_argument('--no-stride_before_pool', dest='stride_before_pool',
+                        action='store_false')
     parser.add_argument("--task", required=True, type=str)
     parser.add_argument("--train_folder", required=True, type=str)
     parser.add_argument("--weight_decay", required=True, type=float)
 
     known, unknown = parser.parse_known_args()
     if unknown:
+        print("I don't know these run arguments")
         print(unknown)
         exit()
 
@@ -176,6 +183,7 @@ def parse_submit_args():
 
     known, unknown = parser.parse_known_args()
     if unknown:
+        print("I don't know these submit arguments")
         print(unknown)
         exit()
 
