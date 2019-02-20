@@ -51,6 +51,7 @@ class Tuh(object):
 
 class TuhSubset(object):
     def __init__(self, dataset, indices):
+        self.task = dataset.task
         self.X = [dataset.X[i] for i in indices]
         self.y = np.array([dataset.y[i] for i in indices])
         self.files = np.array([dataset.files[i] for i in indices])

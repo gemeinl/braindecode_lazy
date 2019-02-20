@@ -27,7 +27,7 @@ from braindecode_lazy.experiments.monitors_lazy_loading import (
     CroppedAgeRegressionDiagnosisMonitor, compute_preds_per_trial, RAMMonitor)
 from braindecode_lazy.datautil.iterators import LazyCropsFromTrialsIterator
 from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
-from braindecode_lazy.experiments.experiment import Experiment  # !!!!!!
+from braindecode_lazy.experiments.experiment import Experiment
 from braindecode_lazy.datasets.tuh import Tuh, TuhSubset
 from examples.utils import parse_run_args
 
@@ -48,30 +48,31 @@ def mse_loss_on_mean(preds, targets):
     return F.mse_loss(mean_preds, targets)
 
 
-def setup_exp(train_folder,
-            n_recordings,
-            n_chans,
-            model_name,
-            n_start_chans,
-            n_chan_factor,
-            input_time_length,
-            final_conv_length,
-            model_constraint,
-            stride_before_pool,
-            init_lr,
-            batch_size,
-            max_epochs,
-            cuda,
-            num_workers,
-            task,
-            weight_decay,
-            seed,
-            n_folds,
-            shuffle_folds,
-            lazy_loading,
-            eval_folder,
-            result_folder,
-            ):
+def setup_exp(
+        train_folder,
+        n_recordings,
+        n_chans,
+        model_name,
+        n_start_chans,
+        n_chan_factor,
+        input_time_length,
+        final_conv_length,
+        model_constraint,
+        stride_before_pool,
+        init_lr,
+        batch_size,
+        max_epochs,
+        cuda,
+        num_workers,
+        task,
+        weight_decay,
+        seed,
+        n_folds,
+        shuffle_folds,
+        lazy_loading,
+        eval_folder,
+        result_folder,
+        ):
     logging.info("Targets for this task: <{}>".format(task))
 
     import torch.backends.cudnn as cudnn
@@ -126,6 +127,7 @@ def setup_exp(train_folder,
         model = new_model
 
     if cuda:
+        logging.info("using the gpu")
         model.cuda()
 
     to_dense_prediction_model(model)
@@ -140,14 +142,15 @@ def setup_exp(train_folder,
 
     if eval_folder is None:
         logging.info("will do validation")
-        if lazy_loading is True:
-            logging.info("using lazy loading")
+        if lazy_loading:
+            logging.info("using lazy loading to load {} recs"
+                         .format(n_recordings))
             dataset = TuhLazy(train_folder, target=task,
                               n_recordings=n_recordings)
         else:
-            logging.info("using traditional loading")
-            dataset = Tuh(train_folder, n_recordings=n_recordings,
-                          target=task)
+            logging.info("using traditional loading to load {} recs"
+                         .format(n_recordings))
+            dataset = Tuh(train_folder, n_recordings=n_recordings, target=task)
 
         rest = seed % n_folds
         indices = np.arange(len(dataset))
@@ -159,7 +162,7 @@ def setup_exp(train_folder,
             if n_folds - i == rest:
                 break
 
-        if lazy_loading is True:
+        if lazy_loading:
             test_subset = TuhLazySubset(dataset, test_ind)
             train_subset = TuhLazySubset(dataset, train_ind)
         else:
@@ -167,14 +170,23 @@ def setup_exp(train_folder,
             train_subset = TuhSubset(dataset, train_ind)
     else:
         logging.info("will do final evaluation")
-        if lazy_loading is True:
+        if lazy_loading:
             train_subset = TuhLazy(train_folder, target=task)
             test_subset = TuhLazy(eval_folder, target=task)
         else:
             train_subset = Tuh(train_folder, target=task)
             test_subset = Tuh(eval_folder, target=task)
 
-    if lazy_loading is True:
+    if task == "age":
+        # standardize ages based on train set
+        y_train = train_subset.y
+        y_train_mean = np.mean(y_train)
+        y_train_std = np.std(y_train)
+        train_subset.y = (y_train - y_train_mean) / y_train_std
+        y_test = test_subset.y
+        test_subset.y = (y_test - y_train_mean) / y_train_std
+
+    if lazy_loading:
         iterator = LazyCropsFromTrialsIterator(
             input_time_length, n_preds_per_input, batch_size,
             seed=seed, num_workers=num_workers,
@@ -189,9 +201,8 @@ def setup_exp(train_folder,
     monitors.append(RAMMonitor())
     monitors.append(RuntimeMonitor())
     if task == "age":
-        monitors.append(CroppedAgeRegressionDiagnosisMonitor(input_time_length,
-                                                             n_preds_per_input))
-        monitors.append(RMSEMonitor(input_time_length, n_preds_per_input))
+        monitors.append(RMSEMonitor(input_time_length, n_preds_per_input,
+                                    mean=y_train_mean, std=y_train_std))
     else:
         monitors.append(CroppedDiagnosisMonitor(input_time_length,
                                                 n_preds_per_input))

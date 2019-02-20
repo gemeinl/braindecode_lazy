@@ -96,7 +96,8 @@ class RAMMonitor(object):
 
 class RMSEMonitor(object):
     """
-    Compute trialwise misclasses from predictions for crops for non-dense predictions.
+    Compute trialwise misclasses from predictions for crops for non-dense
+    predictions.
 
     Parameters
     ----------
@@ -104,9 +105,12 @@ class RMSEMonitor(object):
         Temporal length of one input to the model.
     """
 
-    def __init__(self, input_time_length, n_preds_per_input):
+    def __init__(self, input_time_length, n_preds_per_input, mean=None,
+                 std=None):
         self.input_time_length = input_time_length
         self.n_preds_per_input = n_preds_per_input
+        self.mean = mean
+        self.std = std
 
     def monitor_epoch(self, ):
         return
@@ -118,23 +122,27 @@ class RMSEMonitor(object):
             all_preds, dataset, input_time_length=self.input_time_length,
             n_stride=self.n_preds_per_input)
 
-        mean_preds_per_trial = [np.mean(preds, axis=(0, 2)) for preds in preds_per_trial]
+        mean_preds_per_trial = [np.mean(preds, axis=(0, 2)) for preds in
+                                preds_per_trial]
         mean_preds_per_trial = np.array(mean_preds_per_trial).reshape(-1)
 
         out = {}
-        y_orig = dataset.get_targets(standardize=False)
-        mean_y, std_y = np.mean(y_orig), np.std(y_orig)
-        preds = (mean_preds_per_trial * std_y) + mean_y
-        mse_rec = mean_squared_error(y_pred=preds, y_true=y_orig)
+        if self.mean is not None and self.std is not None:
+            mean_preds_per_trial = (mean_preds_per_trial * self.std) + self.mean
+        y = (dataset.y * self.std) + self.mean
+        assert mean_preds_per_trial.shape == y.shape
+        mse_rec = mean_squared_error(y_pred=mean_preds_per_trial, y_true=y)
         rmse_rec = np.sqrt(mse_rec)
-        out.update({"{}_rmse_rec".format(setname): rmse_rec})
+        out.update({"{}_rmse".format(setname): rmse_rec})
         return out
 
 
 # this monitor was taken from robintibor auto-eeg-diagnosis-example
 class CroppedDiagnosisMonitor(object):
     """
-    Compute trialwise misclasses from predictions for crops for non-dense predictions.
+    Compute trialwise misclasses from predictions for crops for non-dense
+    predictions.
+
     Parameters
     ----------
     input_time_length: int
@@ -190,44 +198,6 @@ class CroppedDiagnosisMonitor(object):
             auc = np.nan
         column_name = "{:s}_auc".format(setname)
         out.update({column_name: float(auc)})
-        return out
-
-
-class CroppedAgeRegressionDiagnosisMonitor(object):
-    """
-    Compute trialwise misclasses from predictions for crops for non-dense predictions.
-
-    Parameters
-    ----------
-    input_time_length: int
-        Temporal length of one input to the model.
-    """
-
-    def __init__(self, input_time_length, n_preds_per_input):
-        self.input_time_length = input_time_length
-        self.n_preds_per_input = n_preds_per_input
-
-    def monitor_epoch(self, ):
-        return
-
-    def monitor_set(self, setname, all_preds, all_losses,
-                    all_batch_sizes, all_targets, dataset):
-        """Assuming one hot encoding for now"""
-        preds_per_trial = compute_preds_per_trial(
-            all_preds, dataset, input_time_length=self.input_time_length,
-            n_stride=self.n_preds_per_input)
-
-        mean_preds_per_trial = [np.mean(preds, axis=(0, 2)) for preds in
-                                preds_per_trial]
-        mean_preds_per_trial = np.array(mean_preds_per_trial).reshape(-1)
-        y = dataset.get_targets()
-        assert mean_preds_per_trial.shape == y.shape
-        mse = mean_squared_error(y_pred=mean_preds_per_trial, y_true=y)
-        rmse = np.sqrt(mse)
-        
-        out = {}
-        column_name = "{:s}_rmse".format(setname)
-        out.update({column_name: float(rmse)})
         return out
 
 
