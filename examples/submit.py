@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 
+# TODO: use .txt file instead of .csv file?
+
 
 # convert dictionay to cmd args in the form "--key value"
 def dict_to_cmd_args(d):
@@ -43,15 +45,22 @@ def main():
 
     # specify python path, virtual env and python cript to be run
     python_path = '/home/gemeinl/code/braindecode_lazy'
-    virtual_env = ('/home/gemeinl/anaconda3/bin/activate && conda activate '
-                   'braindecode3')
+    #virtual_env = ('/home/gemeinl/anaconda3/bin/activate && conda activate '
+    #               'braindecode3')
+    virtual_env = 'conda activate braindecode'
     python_file = ('/home/gemeinl/code/braindecode_lazy/examples/' 
                    'tuh_auto_diag.py')
 
     # specify queue, temporary job file and command to submit
     queue = "meta_gpu-ti"
+    # schedule to different hosts. only one jost per host
+    hosts = ["metagpua", "metagpub", "metagpuc", "metagpud", "metagpue"]
+    # queue = "ml_gpu-rtx2080"
     script_name = "/home/gemeinl/jobs/slurm/run_tmp.sh"
-    batch_submit = "sbatch -c{} -p {} --array={}-{} --job-name=b_{}_j_{} {} {}"
+    batch_submit = "sbatch -p {} -w {} -c {} --array={}-{} --job-name=b_{}_j_{} {} {}"
+
+    # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
+
     dependency = "--dependency=afterok:{}"
 
     n_parallel = 5  # number of jobs to run in parallel in a batch
@@ -87,10 +96,11 @@ def main():
             dependency_job_id = read_job_id_from_job_name(dependency_job_name)
             dependency_term = "" if batch_i == 0 else dependency.format(
                 dependency_job_id)
-            print(batch_submit.format(num_workers, queue, j, j, batch_i,
+            host = hosts[j]
+            print(batch_submit.format(queue, host, num_workers, j, j, batch_i,
                                       i % n_parallel, dependency_term,
                                       script_name))
-            os.system(batch_submit.format(num_workers, queue, j, j, batch_i,
+            os.system(batch_submit.format(queue, host, num_workers, j, j, batch_i,
                                           i % n_parallel, dependency_term,
                                           script_name))
             i += 1

@@ -127,7 +127,7 @@ def parse_run_args():
     parser.add_argument("--max_epochs", required=True, type=int)
     parser.add_argument("--model_constraint", required=True, type=str)
     parser.add_argument("--model_name", required=True, type=str)
-    parser.add_argument("--n_chan_factor", required=True, type=float)
+    parser.add_argument("--n_chan_factor", required=True, type=str)  # parse yourself
     parser.add_argument("--n_chans", required=True, type=int)
     parser.add_argument("--n_folds", required=True, type=int)
     parser.add_argument("--n_recordings", required=True, type=str)  # parse yourself
@@ -154,17 +154,24 @@ def parse_run_args():
         exit()
 
     known_vars = vars(known)
-    try:
-        known_vars["n_recordings"] = int(known_vars["n_recordings"])
-    except:
+    if known_vars["n_recordings"] in ["nan", "None"]:
         known_vars["n_recordings"] = None
+    else:  # assume integer
+        known_vars["n_recordings"] = int(known_vars["n_recordings"])
+
+    if known_vars["n_chan_factor"] in ["nan", "None"]:
+        known_vars["n_chan_factor"] = None
+    else:  # assume integer
+        known_vars["n_chan_factor"] = int(known_vars["n_chan_factor"])
 
     if known_vars["model_constraint"] in ["nan", "None"]:
         known_vars["model_constraint"] = None
+
+    if known_vars["result_folder"] in ["nan", "None"]:
+        known_vars["result_folder"] = None
+
     if known_vars["eval_folder"] in ["nan", "None"]:
         known_vars["eval_folder"] = None
-    if known_vars["n_chan_factor"] in ["nan", "None"]:
-        known_vars["n_chan_factor"] = None
 
     return known_vars
 
