@@ -23,8 +23,8 @@ from braindecode.models.deep4 import Deep4Net
 
 # my imports
 from braindecode_lazy.experiments.monitors_lazy_loading import (
-    LazyMisclassMonitor, RMSEMonitor, CroppedDiagnosisMonitor,
-    CroppedAgeRegressionDiagnosisMonitor, compute_preds_per_trial, RAMMonitor)
+    LazyMisclassMonitor, RMSEMonitor, CroppedDiagnosisMonitor, RAMMonitor,
+    compute_preds_per_trial)
 from braindecode_lazy.datautil.iterators import LazyCropsFromTrialsIterator
 from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
 from braindecode_lazy.experiments.experiment import Experiment
@@ -275,12 +275,13 @@ def write_predictions(y, mean_preds_per_trial, setname, kwargs, exp):
                   "true_gender": y}
     elif kwargs["task"] == "age":
         # very ugly to access a monitor in a hardcoded location
-        mean_train_age = exp.monitors[-1].mean_train_age
-        std_train_age = exp.monitors[-1].std_train_age
+        m = exp.monitors[-1]
+        assert type(m) is RMSEMonitor
+        mean = exp.monitors[-1].mean
+        std = exp.monitors[-1].std
         # recreate actual age from standardized age
-        y = (y * std_train_age) + mean_train_age
-        mean_preds_per_trial = (std_train_age * mean_preds_per_trial) + \
-                               mean_train_age
+        y = (y * std) + mean
+        mean_preds_per_trial = (std * mean_preds_per_trial) + mean
 
         column = "age"
         y_pred = mean_preds_per_trial.squeeze()
