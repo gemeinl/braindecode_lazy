@@ -86,7 +86,7 @@ class RAMMonitor(object):
         out = {}
         process = psutil.Process(os.getpid())
         usage = process.memory_info().rss
-        out.update({"RAM usage": usage/1000000000})
+        out.update({"ram_usage": usage/1000000000})
         return out
 
     def monitor_set(self, setname, all_preds, all_losses,
