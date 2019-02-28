@@ -72,6 +72,7 @@ def setup_exp(
         lazy_loading,
         eval_folder,
         result_folder,
+        run_on_normals
         ):
     logging.info("Targets for this task: <{}>".format(task))
 
@@ -151,6 +152,13 @@ def setup_exp(
             logging.info("using traditional loading to load {} recs"
                          .format(n_recordings))
             dataset = Tuh(train_folder, n_recordings=n_recordings, target=task)
+
+        # only run on normal subjects
+        if run_on_normals:
+            ids = [i for i in range(len(dataset))
+                   if dataset.pathologicals[i] == 0]  # 0 is non-pathological
+            dataset = TuhSubset(dataset, ids)
+            logging.info("only using {} normal subjects".format(len(dataset)))
 
         rest = seed % n_folds
         indices = np.arange(len(dataset))

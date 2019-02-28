@@ -44,10 +44,10 @@ class TuhLazy(LazyDataset):
         if n_recordings is not None:
             self.file_paths = self.file_paths[:n_recordings]
 
-        self.X, self.y = self.pre_load(self.file_paths)
+        self.X, self.y, self.pathologicals = self.pre_load(self.file_paths)
 
     def pre_load(self, files):
-        X, y = [], []
+        X, y, pathologicals = [], [], []
         for file_ in files:
             # pandas read is slow
             # however, this is only called once upon creation of the data set
@@ -60,13 +60,14 @@ class TuhLazy(LazyDataset):
             y.append(y_)
             n_samples = int(info["n_samples"])
             X.append(np.empty(shape=(1, n_samples)))
+            pathologicals.append(info["pathological"])
 
         if self.task == "age":
             y = np.array(y).astype(np.float32)
         else:
             assert self.task in ["pathological", "gender"], "unknown task"
             y = np.array(y).astype(np.int64)
-        return X, y
+        return X, y, pathologicals
 
     def load_lazy(self, fname, start, stop):
         return load_lazy_panads_h5_data(fname, start, stop)
