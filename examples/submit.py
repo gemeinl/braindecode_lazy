@@ -45,41 +45,27 @@ def main():
 
     # specify python path, virtual env and python cript to be run
     python_path = '/home/gemeinl/code/braindecode_lazy'
-    #virtual_env = ('/home/gemeinl/anaconda3/bin/activate && conda activate '
-    #               'braindecode3')
     virtual_env = 'conda activate braindecode'
     python_file = ('/home/gemeinl/code/braindecode_lazy/examples/' 
                    'tuh_auto_diag.py')
 
     # specify queue, temporary job file and command to submit
-    queue = "meta_gpu-ti"
-    # schedule to different hosts. only one jost per host
-    hosts = ["metagpua", "metagpub", "metagpuc", "metagpud", "metagpue"]
-    # queue = "ml_gpu-rtx2080"
+    # queue = "meta_gpu-ti"
+    queue = "ml_gpu-rtx2080"
     script_name = "/home/gemeinl/jobs/slurm/run_tmp.sh"
-    batch_submit = "sbatch -p {} -w {} -c {} --array={}-{} --job-name=b_{}_j_{} {} {}"
+    batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {}"
 
     # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
 
-    dependency = "--dependency=afterok:{}"
-
-    n_parallel = 5  # number of jobs to run in parallel in a batch
-    batch_i = 0  # batch_i current batch running
-    i = 0  # i total number of run jobs
-
+    setting_names = list(configs_df.columns)
     # loop through all the configs
-    for setting in configs_df:
+    for setting_i, setting in enumerate(configs_df):
         config = configs_df[setting].to_dict()
         # TODO: what if n_folds not in config?
         n = int(config["n_folds"])
         num_workers = int(config["num_workers"])
         # create a tmp job file / job for every repetition / fold
         for j in range(n):
-            # if this is not the very first job, increase batch_i whenever
-            # n_parallel jobs were submitted
-            if i != 0 and i % n_parallel == 0:
-                batch_i += 1
-
             config["seed"] = j
             cmd_args = dict_to_cmd_args(config)
             curr_job_file = job_file.format(python_path, virtual_env,
@@ -89,21 +75,12 @@ def main():
             with open(script_name, "w") as f:
                 f.writelines(curr_job_file)
 
-            # when this is not the first batch, add dependecy on the previous
-            # batch
-            dependency_job_name = ("b_" + str(batch_i - 1) + "_j_" +
-                                   str(i % n_parallel))
-            dependency_job_id = read_job_id_from_job_name(dependency_job_name)
-            dependency_term = "" if batch_i == 0 else dependency.format(
-                dependency_job_id)
-            host = hosts[j]
-            print(batch_submit.format(queue, host, num_workers, j, j, batch_i,
-                                      i % n_parallel, dependency_term,
-                                      script_name))
-            os.system(batch_submit.format(queue, host, num_workers, j, j, batch_i,
-                                          i % n_parallel, dependency_term,
-                                          script_name))
-            i += 1
+            print(batch_submit.format(
+                queue, num_workers, j, j, setting_names[setting_i]+str(j),
+                script_name))
+            os.system(batch_submit.format(
+                queue, num_workers, j, j, setting_names[setting_i]+str(j),
+                script_name))
 
 
 if __name__ == '__main__':
