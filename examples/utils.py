@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import argparse
+import logging
 import os
 import re
 
@@ -105,15 +106,18 @@ def parse_run_args():
     parser.add_argument("--task", required=True, type=str)
     parser.add_argument("--train_folder", required=True, type=str)
     parser.add_argument("--weight_decay", required=True, type=float)
-    parser.add_argument('--run_on_normals', dest='run_on_normals',
-                        action='store_true')
-    parser.add_argument('--no-run_on_normals', dest='run_on_normals',
-                        action='store_false')
+    parser.add_argument('--run_on_normals',
+                        dest='run_on_normals', action='store_true')
+    parser.add_argument('--no-run_on_normals',
+                        dest='run_on_normals', action='store_false')
+    parser.add_argument('--run_on_abnormals',
+                        dest='run_on_abnormals', action='store_false')
+    parser.add_argument('--no-run_on_abnormals',
+                        dest='run_on_abnormals', action='store_false')
 
     known, unknown = parser.parse_known_args()
     if unknown:
-        print("I don't know these run arguments")
-        print(unknown)
+        logging.error("I don't know these run arguments:\n{}".format(unknown))
         exit()
 
     known_vars = vars(known)
