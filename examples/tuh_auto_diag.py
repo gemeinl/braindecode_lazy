@@ -72,7 +72,8 @@ def setup_exp(
         lazy_loading,
         eval_folder,
         result_folder,
-        run_on_normals
+        run_on_normals,
+        run_on_abnormals,
         ):
     logging.info("Targets for this task: <{}>".format(task))
 
@@ -153,12 +154,19 @@ def setup_exp(
                          .format(n_recordings))
             dataset = Tuh(train_folder, n_recordings=n_recordings, target=task)
 
+        assert not (run_on_normals and run_on_abnormals), (
+            "decide whether to run on normal or abnormal subjects")
         # only run on normal subjects
         if run_on_normals:
             ids = [i for i in range(len(dataset))
                    if dataset.pathologicals[i] == 0]  # 0 is non-pathological
             dataset = TuhSubset(dataset, ids)
             logging.info("only using {} normal subjects".format(len(dataset)))
+        if run_on_abnormals:
+            ids = [i for i in range(len(dataset))
+                   if dataset.pathologicals[i] == 1]  # 1 is pathological
+            dataset = TuhSubset(dataset, ids)
+            logging.info("only using {} abnormal subjects".format(len(dataset)))
 
         rest = seed % n_folds
         indices = np.arange(len(dataset))
