@@ -110,10 +110,10 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
         plt.savefig(out_dir+"learning.pdf", bbox_inches="tight")
 
 
-def plot_result_overview(result_directory, decoding_tasks, models, metric,
+def plot_result_overview(result_directory, decoding_tasks, models, metric_name,
                          fs=20):
     # misclass_or_rmse = "rmse" if "age" in decoding_tasks else "misclass"
-    misclass_or_rmse = metric
+    misclass_or_rmse = metric_name
     factor = 1 if misclass_or_rmse == "rmse" else 100
     decoding_types = ["cv", "eval"]
 
@@ -123,8 +123,7 @@ def plot_result_overview(result_directory, decoding_tasks, models, metric,
         for decoding_task in decoding_tasks:
             for decoding_type in decoding_types:
                 path = os.path.join(result_directory, model, decoding_task,
-                                    decoding_type,
-                                    "resampy0.2.1_clipafter_rejecting/")
+                                    decoding_type) + "/"
                 if os.path.exists(path):
                     dfs = df_list_from_dir(path)[:5]
                     misclasses = [d["test_"+misclass_or_rmse].iloc[-1]
@@ -163,12 +162,12 @@ def plot_result_overview(result_directory, decoding_tasks, models, metric,
                 labels.append('\n'.join([model, decoding_task, decoding_type]))
                 i += 1
     if misclass_or_rmse == "rmse":
-        ylabel = "rmse [years]"
+        ylabel = "RMSE [years]"
     else:
-        ylabel = metric + " [%]"
+        ylabel = metric_name + " [%]"
     plt.ylabel(ylabel, fontsize=fs)
     plt.yticks(fontsize=fs)
-    plt.xticks(np.arange(1, len(labels)+2), labels, rotation=45, fontsize=fs)
+    plt.xticks(np.arange(1, len(labels)+2), labels, rotation=90, fontsize=fs)
     #plt.xlabel("experiment", fontsize=fs)
     plt.legend(ncol=2, fontsize=fs)
     plt.xlim(.5, len(labels)+.5)

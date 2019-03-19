@@ -53,7 +53,7 @@ def main():
     # queue = "meta_gpu-ti"
     queue = "ml_gpu-rtx2080"
     script_name = "/home/gemeinl/jobs/slurm/run_tmp.sh"
-    batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {}"
+    batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {} --time=12:00:00"
 
     # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
 
