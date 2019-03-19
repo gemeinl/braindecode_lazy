@@ -48,6 +48,18 @@ def mse_loss_on_mean(preds, targets):
     return F.mse_loss(mean_preds, targets)
 
 
+def remove_file_from_dataset(dataset, file_id, file):
+    if file in dataset.file_paths[file_id]:
+        indices = list(range(len(dataset)))
+        indices.remove(file_id)
+
+    ds = TuhSubset(dataset, indices)
+    for f in ds.file_paths:
+        assert file not in f, "file not correctly removed"
+    logging.info("removed rec {}".format(f))
+    return ds
+
+
 def setup_exp(
         train_folder,
         n_recordings,
@@ -154,6 +166,13 @@ def setup_exp(
                          .format(n_recordings))
             dataset = Tuh(train_folder, n_recordings=n_recordings, target=task)
 
+        # remove rec 801:
+        # train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/00008184_s001_t001
+        # since it contains windows with all outliers
+        dataset = remove_file_from_dataset(dataset, file_id=801, file=(
+            "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
+            "00008184_s001_t001"))
+
         assert not (run_on_normals and run_on_abnormals), (
             "decide whether to run on normal or abnormal subjects")
         # only run on normal subjects
@@ -168,15 +187,19 @@ def setup_exp(
             dataset = TuhSubset(dataset, ids)
             logging.info("only using {} abnormal subjects".format(len(dataset)))
 
-        rest = seed % n_folds
         indices = np.arange(len(dataset))
         kf = KFold(n_splits=n_folds, shuffle=shuffle_folds)
         for i, (train_ind, test_ind) in enumerate(kf.split(indices)):
             assert len(np.intersect1d(train_ind, test_ind)) == 0, \
                 "train and test set overlap!"
 
-            if n_folds - i == rest:
+            if i == seed:
                 break
+
+        if not run_on_normals and not run_on_abnormals:
+            expected = [529, 529, 528, 528, 528]
+            assert len(test_ind) == expected[i], (
+                "expected: {}, actual: {}".format(expected[i], len(test_ind)))
 
         if lazy_loading:
             test_subset = TuhLazySubset(dataset, test_ind)
@@ -192,6 +215,14 @@ def setup_exp(
         else:
             train_subset = Tuh(train_folder, target=task)
             test_subset = Tuh(eval_folder, target=task)
+
+        # remove rec 801:
+        # train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/00008184_s001_t001
+        # since it contains windows with all outliers
+        train_subset = remove_file_from_dataset(
+            train_subset, file_id=801, file=(
+                "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
+                "00008184_s001_t001"))
 
     if task == "age":
         # standardize ages based on train set
