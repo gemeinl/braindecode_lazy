@@ -6,14 +6,14 @@ from braindecode_lazy.datasets.dataset import Dataset
 
 # avoid duplicates for reading file names by this ugly import
 sys.path.insert(1, "/home/gemeinl/code/brainfeatures/")
-from brainfeatures.data_set.tuh_abnormal import _read_all_file_names
+from brainfeatures.data_set.tuh_abnormal import read_all_file_names
 
 
 class Tuh(Dataset):
     def __init__(self, data_folder, n_recordings=None, target="pathological"):
         self.task = target
         assert data_folder.endswith("/"), "data_folder has to end with '/'"
-        self.file_paths = _read_all_file_names(data_folder, ".h5", key="time")
+        self.file_paths = read_all_file_names(data_folder, ".h5", key="time")
         if n_recordings is not None:
             self.file_paths = self.file_paths[:n_recordings]
 
@@ -52,3 +52,4 @@ class TuhSubset(Dataset):
         self.X = [dataset.X[i] for i in indices]
         self.y = np.array([dataset.y[i] for i in indices])
         self.file_paths = np.array([dataset.file_paths[i] for i in indices])
+        self.pathologicals = np.array([dataset.pathologicals[i] for i in indices])
