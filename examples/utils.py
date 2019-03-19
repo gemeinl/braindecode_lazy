@@ -1,3 +1,4 @@
+from itertools import product
 import pandas as pd
 import numpy as np
 import argparse
@@ -31,43 +32,61 @@ def df_list_from_dir(path, prefix="epochs_df_"):
         i += 1
 
 
+# all_preds_df = concat_all_preds(
+#     "/data/schirrmr/gemeinl/results/networks/{}/{}/{}/predictions_test_{}.csv",
+#     "deep", "cv", 5)
+def concat_all_preds(path, model, split, n):
+    all_preds_df = pd.DataFrame()
+    for i in range(n):
+        f_path = path.format(model, "{}", split, i)
+        patho_df = pd.read_csv(f_path.format("pathological"), index_col=0)
+        gender_df = pd.read_csv(f_path.format("gender"), index_col=0)
+        age_df = pd.read_csv(f_path.format("age"), index_col=0)
+        assert len(patho_df) == len(gender_df) == len(
+            age_df), "prediction dfs are of unequal length"
+        merged_df = pd.concat([patho_df, gender_df, age_df], axis=1)
+        merged_df["id"] = pd.Series(len(merged_df) * [i])
+        all_preds_df = all_preds_df.append(merged_df)
+
+    return all_preds_df
+
+
 def read_network_results(directory, models, decoding_tasks):
     result_df = pd.DataFrame()
-    for model in models:
-        for decoding_task in decoding_tasks:
-            for decoding_type in ["cv", "eval"]:
-                curr_path = os.path.join(directory, model, decoding_task,
-                                         decoding_type, "")
-                if os.path.exists(curr_path):
-                    dfs = df_list_from_dir(curr_path)
-                    rmse = np.nan
-                    misclass = np.nan
-                    misclass_or_rmse = "misclass" if "train_misclass" in dfs[0]\
-                        else "rmse"
-                    result = np.mean([df["test_"+misclass_or_rmse].iloc[-1]
-                                      for df in dfs], axis=0)
-                    if "train_misclass" in dfs[0]:
-                        misclass = result * 100
-                    else:
-                        rmse = result
+    for model, decoding_task, decoding_type in product(
+            models, decoding_tasks, ["cv", "eval"]):
+        curr_path = os.path.join(
+            directory, model, decoding_task, decoding_type, "")
+        if os.path.exists(curr_path):
+            dfs = df_list_from_dir(curr_path)
+            rmse = np.nan
+            misclass = np.nan
+            misclass_or_rmse = "misclass" if "train_misclass" in dfs[0]\
+                else "rmse"
+            result = np.mean([df["test_"+misclass_or_rmse].iloc[-1]
+                              for df in dfs], axis=0)
+            if "train_misclass" in dfs[0]:
+                misclass = result * 100
+            else:
+                rmse = result
 
-                    if "test_auc" in dfs[0]:
-                        auc = np.mean([df["test_auc"].iloc[-1] for df in dfs],
-                                      axis=0)
-                    else:
-                        auc = None
+            if "test_auc" in dfs[0]:
+                auc = np.mean([df["test_auc"].iloc[-1] for df in dfs],
+                              axis=0)
+            else:
+                auc = None
 
-                    row = {
-                        "auc": auc,
-                        "model": model,
-                        "task": decoding_task,
-                        "subset": decoding_type,
-                        "misclass": misclass,
-                        "rmse": rmse,
-                        "n": len(dfs),
-                        "n_epochs": len(dfs[0])-1
-                    }
-                    result_df = result_df.append(row, ignore_index=True)
+            row = {
+                "auc": auc,
+                "model": model,
+                "task": decoding_task,
+                "subset": decoding_type,
+                "misclass": misclass,
+                "rmse": rmse,
+                "n": len(dfs),
+                "n_epochs": len(dfs[0])-1
+            }
+            result_df = result_df.append(row, ignore_index=True)
     return result_df
 
 
