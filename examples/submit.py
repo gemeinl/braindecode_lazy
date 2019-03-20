@@ -1,6 +1,9 @@
 import pandas as pd
 import os
 
+from utils import parse_submit_args
+
+
 # TODO: use .txt file instead of .csv file?
 
 
@@ -27,7 +30,7 @@ def read_job_id_from_job_name(job_name):
     return dependency_job_id
 
 
-def main():
+def main(configs_file, conda_env_name, python_file, queue, python_path):
     # create jobs file text in this script from which a temporary file will
     # be created
     job_file = (
@@ -39,21 +42,14 @@ def main():
         "source {}\n"
         "python {} {}\n")
 
-    configs_file = "/home/gemeinl/code/braindecode_lazy/examples/configs.csv"
     # load all the configs to be run
-    configs_df = pd.DataFrame.from_csv(configs_file)
-
-    # specify python path, virtual env and python cript to be run
-    python_path = '/home/gemeinl/code/braindecode_lazy'
-    virtual_env = 'conda activate braindecode'
-    python_file = ('/home/gemeinl/code/braindecode_lazy/examples/' 
-                   'tuh_auto_diag.py')
-
-    # specify queue, temporary job file and command to submit
-    # queue = "meta_gpu-ti"
-    queue = "ml_gpu-rtx2080"
+    configs_df = pd.read_csv(configs_file, index_col=0)
+    # activate conda env
+    virtual_env = 'conda activate {}'.format(conda_env_name)
+    # create a tmp job file to be run
     script_name = "/home/gemeinl/jobs/slurm/run_tmp.sh"
-    batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {} --time=12:00:00"
+    batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {}"
+    # --time=12:00:00"
 
     # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
 
@@ -84,5 +80,6 @@ def main():
 
 
 if __name__ == '__main__':
-    # TODO: add arg parse
-    main()
+    kwargs = parse_submit_args()
+    print(kwargs)
+    main(**kwargs)

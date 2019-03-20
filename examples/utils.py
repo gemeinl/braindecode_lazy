@@ -165,14 +165,15 @@ def parse_run_args():
 def parse_submit_args():
     args = [
         ['configs_file', str],
-        ['scipt_file', str],
+        ['python_file', str],
         ['queue', str],
-        ['n_parallel', int]
+        ['conda_env_name', str],
+        ['python_path', str]
     ]
 
     parser = argparse.ArgumentParser()
     for arg, type in args:
-        parser.add_argument("--" + arg, required=False, type=type)
+        parser.add_argument("--" + arg, required=True, type=type)
 
     known, unknown = parser.parse_known_args()
     if unknown:
