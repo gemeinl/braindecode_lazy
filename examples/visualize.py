@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from itertools import product
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -112,62 +113,71 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
 
 def plot_result_overview(result_directory, decoding_tasks, models, metric_name,
                          fs=20):
-    # misclass_or_rmse = "rmse" if "age" in decoding_tasks else "misclass"
-    misclass_or_rmse = metric_name
-    factor = 1 if misclass_or_rmse == "rmse" else 100
-    decoding_types = ["cv", "eval"]
-
     result_df = pd.DataFrame()
+    splits = ["cv", "eval"]
     i = 0
-    for model in models:
-        for decoding_task in decoding_tasks:
-            for decoding_type in decoding_types:
-                path = os.path.join(result_directory, model, decoding_task,
-                                    decoding_type) + "/"
-                if os.path.exists(path):
-                    dfs = df_list_from_dir(path)[:5]
-                    misclasses = [d["test_"+misclass_or_rmse].iloc[-1]
-                                  for d in dfs]
-                    for misclass in misclasses:
-                        result_df = result_df.append({
-                            "model": model,
-                            "subset": decoding_type,
-                            "task": decoding_task,
-                            misclass_or_rmse: misclass*factor},
-                            ignore_index=True)
-                    i += 1
+    for model, decoding_task, decoding_type in product(
+            models, decoding_tasks, splits):
+        path = os.path.join(result_directory, model, decoding_task,
+                            decoding_type) + "/"
+        if os.path.exists(path):
+            dfs = df_list_from_dir(path)
+            assert len(dfs) == 5, \
+                "expected 5 dataframes from 5 folds/repetitions"
+            if "test_misclass" in dfs[0]:
+                misclass_or_rmse = "misclass"
+                factor = 100
+            else:
+                misclass_or_rmse = "rmse"
+                factor = 1
+            misclasses = [d["test_"+misclass_or_rmse].iloc[-1]
+                          for d in dfs]
+            for misclass in misclasses:
+                result_df = result_df.append({
+                    "model": model,
+                    "subset": decoding_type,
+                    "task": decoding_task,
+                    "misclass/rmse": misclass*factor},
+                    ignore_index=True)
+            i += 1
 
-    n_colors = len(decoding_tasks)*len(decoding_types)*len(models)
-    cm = pylab.get_cmap('tab10')
+    n_colors = len(decoding_tasks)*len(models)
+    #cm = pylab.get_cmap('tab10')
+    # cm = pylab.get_cmap('viridis')
+    cm = pylab.get_cmap('tab20')
+    random_width = .3
+    fig, axes = plt.subplots(nrows=2, sharex=True, sharey=True,
+                             figsize=(18, 10))
+    for j, decoding_type in enumerate(splits):
+        xticklabels = []
+        ax = axes[j]
+        ax.set_title(decoding_type, fontsize=fs)
+        for i, (decoding_task, model) in enumerate(product(
+                decoding_tasks, models)):
+            d = result_df[(result_df.model == model) &
+                          (result_df.task == decoding_task) &
+                          (result_df.subset == decoding_type)]
+            ax.scatter(np.random.rand(len(d))*random_width+i+.5+random_width,
+                       d["misclass/rmse"],
+                       color=cm(i/n_colors), label="")
+            ax.scatter(np.array([i+1]),
+                       np.array([d["misclass/rmse"].mean()]),
+                       marker="^", color=cm(1.*i/n_colors),
+                       s=200, facecolor="none",
+                       label="{:.2f} ($\pm$ {:.2f})"
+                       .format(d["misclass/rmse"].mean(),
+                               d["misclass/rmse"].std()))
+            xticklabels.append('\n'.join([model, decoding_task]))
 
-    plt.figure(figsize=(12, 5))
-    i = 0
-    labels = []
-    for decoding_task in decoding_tasks:
-        for model in models:
-            for decoding_type in decoding_types:
-                d = result_df[(result_df.model == model) &
-                              (result_df.task == decoding_task) &
-                              (result_df.subset == decoding_type)]
-                if len(d) > 0:
-                    sns.regplot(np.random.rand(len(d))+i+.5, d[misclass_or_rmse],
-                                fit_reg=False, color=cm(1.*i/n_colors))
-                    sns.regplot(np.array([i+1]),
-                                np.array([d[misclass_or_rmse].mean()]),
-                                marker="^", fit_reg=False,
-                                scatter_kws={'s': 200}, color=cm(1.*i/n_colors),
-                                label="{:.2f} ($\pm$ {:.2f})"
-                                .format(d[misclass_or_rmse].mean(),
-                                        d[misclass_or_rmse].std()))
-                labels.append('\n'.join([model, decoding_task, decoding_type]))
-                i += 1
-    if misclass_or_rmse == "rmse":
-        ylabel = "RMSE [years]"
-    else:
-        ylabel = metric_name + " [%]"
-    plt.ylabel(ylabel, fontsize=fs)
-    plt.yticks(fontsize=fs)
-    plt.xticks(np.arange(1, len(labels)+2), labels, rotation=90, fontsize=fs)
-    #plt.xlabel("experiment", fontsize=fs)
-    plt.legend(ncol=2, fontsize=fs)
-    plt.xlim(.5, len(labels)+.5)
+        ylabel = metric_name + " [%]" + " / RMSE [years]"
+        ax.set_ylabel(ylabel, fontsize=fs)
+        ax.tick_params(axis="y", labelsize=fs)
+        ax.set_xlim(0, (len(xticklabels) + 1))
+        ax.set_ylim(5, 55)
+        ax.legend(fontsize=fs-10, loc="upper center",
+                  ncol=int(len(models)*len(decoding_tasks)/2))
+
+    plt.xticks(np.arange(1, len(xticklabels) + 2),
+               xticklabels, rotation=90, fontsize=fs)
+    plt.xlabel("experiment", fontsize=fs)
+
