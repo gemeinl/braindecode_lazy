@@ -122,8 +122,8 @@ def plot_result_overview(result_directory, decoding_tasks, models, metric_name,
                             decoding_type) + "/"
         if os.path.exists(path):
             dfs = df_list_from_dir(path)
-            assert len(dfs) == 5, \
-                "expected 5 dataframes from 5 folds/repetitions"
+            assert len(dfs) == 5, (
+                "expected 5 dataframes from 5 folds/repetitions")
             if "test_misclass" in dfs[0]:
                 misclass_or_rmse = "misclass"
                 factor = 100
@@ -142,7 +142,7 @@ def plot_result_overview(result_directory, decoding_tasks, models, metric_name,
             i += 1
 
     n_colors = len(decoding_tasks)*len(models)
-    #cm = pylab.get_cmap('tab10')
+    # cm = pylab.get_cmap('tab10')
     # cm = pylab.get_cmap('viridis')
     cm = pylab.get_cmap('tab20')
     random_width = .3
