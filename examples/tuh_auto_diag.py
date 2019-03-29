@@ -53,11 +53,13 @@ def remove_file_from_dataset(dataset, file_id, file):
         indices = list(range(len(dataset)))
         indices.remove(file_id)
 
-    ds = TuhSubset(dataset, indices)
-    for f in ds.file_paths:
-        assert file not in f, "file not correctly removed"
-    logging.info("removed rec {}".format(f))
-    return ds
+        ds = TuhSubset(dataset, indices)
+        for f in ds.file_paths:
+            assert file not in f, "file {} not correctly removed".format(f)
+        logging.info("successfully removed rec {}".format(f))
+        return ds
+    else:
+        return dataset
 
 
 def setup_exp(
@@ -78,7 +80,6 @@ def setup_exp(
         num_workers,
         task,
         weight_decay,
-        seed,
         n_folds,
         shuffle_folds,
         lazy_loading,
@@ -86,8 +87,14 @@ def setup_exp(
         result_folder,
         run_on_normals,
         run_on_abnormals,
+        seed=None,
         ):
     logging.info("Targets for this task: <{}>".format(task))
+
+    if seed is None:
+        assert "SLURM_ARRAY_TASK_ID" in os.environ
+        seed = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    logging.info("using seed {}".format(seed))
 
     import torch.backends.cudnn as cudnn
     cudnn.benchmark = True
@@ -140,9 +147,12 @@ def setup_exp(
             new_model.add_module(name, module_)
         model = new_model
 
+    info_msg = "using {}, {}".format(
+        os.environ["SLURM_JOB_PARTITION"], os.environ["SLURMD_NODENAME"],)
     if cuda:
-        logging.info("using the gpu")
+        info_msg += ", gpu {}".format(os.environ["CUDA_VISIBLE_DEVICES"])
         model.cuda()
+    logging.info(info_msg)
 
     to_dense_prediction_model(model)
     logging.info("Model:\n{:s}".format(str(model)))
@@ -166,13 +176,6 @@ def setup_exp(
                          .format(n_recordings))
             dataset = Tuh(train_folder, n_recordings=n_recordings, target=task)
 
-        # remove rec 801:
-        # train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/00008184_s001_t001
-        # since it contains windows with all outliers
-        dataset = remove_file_from_dataset(dataset, file_id=801, file=(
-            "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
-            "00008184_s001_t001"))
-
         assert not (run_on_normals and run_on_abnormals), (
             "decide whether to run on normal or abnormal subjects")
         # only run on normal subjects
@@ -190,16 +193,12 @@ def setup_exp(
         indices = np.arange(len(dataset))
         kf = KFold(n_splits=n_folds, shuffle=shuffle_folds)
         for i, (train_ind, test_ind) in enumerate(kf.split(indices)):
-            assert len(np.intersect1d(train_ind, test_ind)) == 0, \
-                "train and test set overlap!"
+            assert len(np.intersect1d(train_ind, test_ind)) == 0, (
+                "train and test set overlap!")
 
+            # seed is in range of number of folds and was set by submit script
             if i == seed:
                 break
-
-        if not run_on_normals and not run_on_abnormals:
-            expected = [529, 529, 528, 528, 528]
-            assert len(test_ind) == expected[i], (
-                "expected: {}, actual: {}".format(expected[i], len(test_ind)))
 
         if lazy_loading:
             test_subset = TuhLazySubset(dataset, test_ind)
@@ -216,13 +215,23 @@ def setup_exp(
             train_subset = Tuh(train_folder, target=task)
             test_subset = Tuh(eval_folder, target=task)
 
-        # remove rec 801:
+        # remove rec:
         # train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/00008184_s001_t001
-        # since it contains windows with all outliers
-        train_subset = remove_file_from_dataset(
-            train_subset, file_id=801, file=(
-                "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
-                "00008184_s001_t001"))
+        # since it contains no crop without outliers (channels A1, A2 broken)
+        subjects = [f.split("/")[-3] for f in train_subset.file_paths]
+        if "00008184" in subjects:
+            bad_id = subjects.index("00008184")
+            train_subset = remove_file_from_dataset(
+                train_subset, file_id=bad_id, file=(
+                    "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
+                    "00008184_s001_t001"))
+        subjects = [f.split("/")[-3] for f in test_subset.file_paths]
+        if "00008184" in subjects:
+            bad_id = subjects.index("00008184")
+            test_subset = remove_file_from_dataset(
+                test_subset, file_id=bad_id, file=(
+                    "train/abnormal/01_tcp_ar/081/00008184/s001_2011_09_21/"
+                    "00008184_s001_t001"))
 
     if task == "age":
         # standardize ages based on train set
@@ -310,6 +319,7 @@ def write_predictions(y, mean_preds_per_trial, setname, kwargs, exp):
                  format(len(mean_preds_per_trial)))
     assert len(y) == len(mean_preds_per_trial)
 
+    # TODELAY: don't hardcode the mappings
     if kwargs["task"] == "pathological":
         column0, column1 = "non-pathological", "pathological"
         a_dict = {column0: mean_preds_per_trial[:, 0],
@@ -370,7 +380,7 @@ def save_model(kwargs, exp):
 def main():
     logging.basicConfig(level=logging.DEBUG)
     kwargs = parse_run_args()
-    print(kwargs)
+    logging.info(kwargs)
     start_time = time.time()
     exp = setup_exp(**kwargs)
     exp.run()
