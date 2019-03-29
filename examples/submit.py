@@ -1,24 +1,19 @@
 import pandas as pd
+import numpy as np
 import os
 
 from utils import parse_submit_args
 
+# TODO: seed solution is really ugly!
 
-# TODO: use .txt file instead of .csv file?
 
-
-# convert dictionay to cmd args in the form "--key value"
 def dict_to_cmd_args(d):
-    s = []
-    for key, value in d.items():
-        # nan means empty entry in csv file
-        # nan has type float, everything else is string
-        # some cmd args should be '--test' and '--no-test'
-        if type(value) is float:
-            s.append("--" + key)
-        else:
-            s.append("--"+key+" "+str(value))
-    return " ".join(s)
+    cmd_args = []
+    for key, value in sorted(d.items()):
+        if pd.isna(value):
+            continue
+        cmd_args.append("--"+key+"="+str(value))
+    return " ".join(cmd_args)
 
 
 def read_job_id_from_job_name(job_name):
@@ -43,9 +38,13 @@ def main(configs_file, conda_env_name, python_file, queue, python_path):
         "python {} {}\n")
 
     # load all the configs to be run
-    configs_df = pd.read_csv(configs_file, index_col=0)
+    configs_df = pd.read_csv(configs_file, index_col=0, dtype=str)
+    # remove empy and comment lines starting with '#'
+    configs_df.drop([index for index in configs_df.index if
+                     index is np.nan or index.startswith("#")], inplace=True)
     # activate conda env
-    virtual_env = 'conda activate {}'.format(conda_env_name)
+    virtual_env = ('/home/gemeinl/anaconda3/bin/activate && '
+                   'conda activate {}'.format(conda_env_name))
     # create a tmp job file to be run
     script_name = "/home/gemeinl/jobs/slurm/run_tmp.sh"
     batch_submit = "sbatch -p {} -c {} --array={}-{} --job-name={} {}"
@@ -53,10 +52,9 @@ def main(configs_file, conda_env_name, python_file, queue, python_path):
 
     # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
 
-    setting_names = list(configs_df.columns)
     # loop through all the configs
-    for setting_i, setting in enumerate(configs_df):
-        config = configs_df[setting].to_dict()
+    for setting_i, (setting_name, setting) in enumerate(configs_df.iterrows()):
+        config = configs_df.loc[setting_name].to_dict()
         # TODO: what if n_folds not in config?
         n = int(config["n_folds"])
         num_workers = int(config["num_workers"])
@@ -71,12 +69,10 @@ def main(configs_file, conda_env_name, python_file, queue, python_path):
             with open(script_name, "w") as f:
                 f.writelines(curr_job_file)
 
-            print(batch_submit.format(
-                queue, num_workers, j, j, setting_names[setting_i]+str(j),
-                script_name))
-            os.system(batch_submit.format(
-                queue, num_workers, j, j, setting_names[setting_i]+str(j),
-                script_name))
+            command = batch_submit.format(
+                queue, num_workers, j, j, setting_name+str(j), script_name)
+            print(command)
+            os.system(command)
 
 
 if __name__ == '__main__':
