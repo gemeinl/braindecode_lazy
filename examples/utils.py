@@ -4,7 +4,6 @@ import numpy as np
 import argparse
 import logging
 import os
-import re
 
 
 def dfs_from_dir(path, prefix="epochs_df_"):
@@ -90,96 +89,71 @@ def read_network_results(directory, models, decoding_tasks):
     return result_df
 
 
-def parse_run_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--batch_size", required=True, type=int)
-    parser.add_argument('--cuda', dest='cuda', action='store_true')
-    parser.add_argument('--no-cuda', dest='cuda', action='store_false')
-    parser.add_argument("--eval_folder", required=True, type=str)
-    parser.add_argument("--final_conv_length", required=True, type=int)
-    parser.add_argument("--init_lr", required=True, type=float)
-    parser.add_argument("--input_time_length", required=True, type=int)
-    parser.add_argument('--lazy_loading', dest='lazy_loading',
-                        action='store_true')
-    parser.add_argument('--no-lazy_loading', dest='lazy_loading',
-                        action='store_false')
-    parser.add_argument("--max_epochs", required=True, type=int)
-    parser.add_argument("--model_constraint", required=True, type=str)
-    parser.add_argument("--model_name", required=True, type=str)
-    parser.add_argument("--n_chan_factor", required=True, type=str)  # parse yourself
-    parser.add_argument("--n_chans", required=True, type=int)
-    parser.add_argument("--n_folds", required=True, type=int)
-    parser.add_argument("--n_recordings", required=True, type=str)  # parse yourself
-    parser.add_argument("--n_start_chans", required=True, type=int)
-    parser.add_argument("--num_workers", required=True, type=int)
-    parser.add_argument("--result_folder", required=True, type=str)
-    parser.add_argument("--seed", required=True, type=int)
-    parser.add_argument('--shuffle_folds', dest='shuffle_folds',
-                        action='store_true')
-    parser.add_argument('--no-shuffle_folds', dest='shuffle_folds',
-                        action='store_false')
-    parser.add_argument('--stride_before_pool', dest='stride_before_pool',
-                        action='store_true')
-    parser.add_argument('--no-stride_before_pool', dest='stride_before_pool',
-                        action='store_false')
-    parser.add_argument("--task", required=True, type=str)
-    parser.add_argument("--train_folder", required=True, type=str)
-    parser.add_argument("--weight_decay", required=True, type=float)
-    parser.add_argument('--run_on_normals',
-                        dest='run_on_normals', action='store_true')
-    parser.add_argument('--no-run_on_normals',
-                        dest='run_on_normals', action='store_false')
-    parser.add_argument('--run_on_abnormals',
-                        dest='run_on_abnormals', action='store_false')
-    parser.add_argument('--no-run_on_abnormals',
-                        dest='run_on_abnormals', action='store_false')
+# taken from:
+# donghao.org/2018/04/10/the-problem-of-bool-type-in-argparse-of-python-2-7/
+def str2bool(value):
+    return value.lower() == 'true'
 
+
+def create_parser_with_args(arg_type_map):
+    parser = argparse.ArgumentParser()
+    for arg, arg_type in arg_type_map:
+        parser.add_argument("--" + arg, type=arg_type)
+    return parser
+
+
+def parse_args(arg_type_map):
+    parser = create_parser_with_args(arg_type_map)
     known, unknown = parser.parse_known_args()
     if unknown:
-        logging.error("I don't know these run arguments:\n{}".format(unknown))
+        logging.error("I don't know these arguments:\n{}".format(unknown))
         exit()
+    return vars(known)
 
-    known_vars = vars(known)
-    if known_vars["n_recordings"] in ["nan", "None"]:
-        known_vars["n_recordings"] = None
-    else:  # assume integer
-        known_vars["n_recordings"] = int(known_vars["n_recordings"])
 
-    if known_vars["n_chan_factor"] in ["nan", "None"]:
-        known_vars["n_chan_factor"] = None
-    else:  # assume integer
-        known_vars["n_chan_factor"] = int(known_vars["n_chan_factor"])
-
-    if known_vars["model_constraint"] in ["nan", "None"]:
-        known_vars["model_constraint"] = None
-
-    if known_vars["result_folder"] in ["nan", "None"]:
-        known_vars["result_folder"] = None
-
-    if known_vars["eval_folder"] in ["nan", "None"]:
-        known_vars["eval_folder"] = None
-
-    return known_vars
+def parse_run_args():
+    arg_type_map = [
+        ['batch_size', int],
+        ['cuda', str2bool],
+        ['eval_folder', str],
+        ['final_conv_length', int],
+        ['init_lr', float],
+        ['input_time_length', int],
+        ['lazy_loading', str2bool],
+        ['max_epochs', int],
+        ['model_constraint', str],
+        ['model_name', str],
+        ['n_chan_factor', int],
+        ['n_chans', int],
+        ['n_folds', int],
+        ['n_recordings', int],
+        ['n_start_chans', int],
+        ['num_workers', int],
+        ['result_folder', str],
+        ['run_on_abnormals', str2bool],
+        ['run_on_normals', str2bool],
+        ['seed', int],
+        ['shuffle_folds', str2bool],
+        ['stride_before_pool', str2bool],
+        ['task', str],
+        ['train_folder', str],
+        ['weight_decay', float]
+    ]
+    # here, Nones are ok
+    return parse_args(arg_type_map)
 
 
 def parse_submit_args():
-    args = [
+    arg_type_map = [
         ['configs_file', str],
         ['python_file', str],
         ['queue', str],
         ['conda_env_name', str],
-        ['python_path', str]
+        ['python_path', str],
+        ['start', int],
+        ['stop', int]
     ]
-
-    parser = argparse.ArgumentParser()
-    for arg, type in args:
-        parser.add_argument("--" + arg, required=True, type=type)
-
-    known, unknown = parser.parse_known_args()
-    if unknown:
-        print("I don't know these submit arguments")
-        print(unknown)
-        exit()
-
-    known_vars = vars(known)
-    return known_vars
+    args = parse_args(arg_type_map)
+    # all the args have to be given, no Nones allowed
+    # assert None not in args.values(), "arg unset {}".format(args)
+    return args
