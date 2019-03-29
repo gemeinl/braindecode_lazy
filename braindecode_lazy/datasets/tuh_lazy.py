@@ -88,7 +88,7 @@ class TuhLazySubset(LazyDataset):
         self.file_paths = np.array([dataset.file_paths[i] for i in indices])
         self.pathologicals = np.array([dataset.pathologicals[i] for i in indices])
 
-        self.X, self.y = dataset.pre_load(self.file_paths)
+        self.X, self.y, self.pathologicals = dataset.pre_load(self.file_paths)
 
     def load_lazy(self, fname, start, stop):
         return load_lazy_panads_h5_data(fname, start, stop)
