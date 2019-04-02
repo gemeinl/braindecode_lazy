@@ -55,8 +55,6 @@ class TuhLazy(LazyDataset):
             assert len(info_df) == 1, "too many rows in info df"
             info = info_df.iloc[-1].to_dict()
             y_ = info[self.task]
-            if self.task == "gender":
-                y_ = 0 if info["gender"] == "M" else 1
             y.append(y_)
             n_samples = int(info["n_samples"])
             X.append(np.empty(shape=(1, n_samples)))
