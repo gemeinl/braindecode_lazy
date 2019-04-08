@@ -18,16 +18,18 @@ from braindecode.datautil.iterators import CropsFromTrialsIterator
 from braindecode.models.util import to_dense_prediction_model
 from braindecode.models.shallow_fbcsp import ShallowFBCSPNet
 from braindecode.experiments.stopcriteria import MaxEpochs
-from braindecode.torch_ext.optimizers import AdamW
+from braindecode.experiments.experiment import Experiment
+# from braindecode.torch_ext.optimizers import AdamW
 from braindecode.models.deep4 import Deep4Net
 
 # my imports
 from braindecode_lazy.experiments.monitors_lazy_loading import (
     LazyMisclassMonitor, RMSEMonitor, CroppedDiagnosisMonitor, RAMMonitor,
     compute_preds_per_trial)
+from braindecode_lazy.torch_ext.optimizers import AdamWWithTracking as AdamW
 from braindecode_lazy.datautil.iterators import LazyCropsFromTrialsIterator
 from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
-from braindecode_lazy.experiments.experiment import Experiment
+# from braindecode_lazy.experiments.experiment import Experiment
 from braindecode_lazy.datasets.tuh import Tuh, TuhSubset
 from examples.utils import parse_run_args
 
@@ -87,14 +89,14 @@ def setup_exp(
         result_folder,
         run_on_normals,
         run_on_abnormals,
-        seed=None,
+        seed,
         ):
-    logging.info("Targets for this task: <{}>".format(task))
+    info_msg = "using {}, {}".format(
+        os.environ["SLURM_JOB_PARTITION"], os.environ["SLURMD_NODENAME"],)
+    info_msg += ", gpu {}".format(os.environ["CUDA_VISIBLE_DEVICES"])
+    logging.info(info_msg)
 
-    if seed is None:
-        assert "SLURM_ARRAY_TASK_ID" in os.environ
-        seed = int(os.environ["SLURM_ARRAY_TASK_ID"])
-    logging.info("using seed {}".format(seed))
+    logging.info("Targets for this task: <{}>".format(task))
 
     import torch.backends.cudnn as cudnn
     cudnn.benchmark = True
@@ -147,12 +149,8 @@ def setup_exp(
             new_model.add_module(name, module_)
         model = new_model
 
-    info_msg = "using {}, {}".format(
-        os.environ["SLURM_JOB_PARTITION"], os.environ["SLURMD_NODENAME"],)
     if cuda:
-        info_msg += ", gpu {}".format(os.environ["CUDA_VISIBLE_DEVICES"])
         model.cuda()
-    logging.info(info_msg)
 
     to_dense_prediction_model(model)
     logging.info("Model:\n{:s}".format(str(model)))
@@ -377,11 +375,25 @@ def save_model(kwargs, exp):
     th.save(exp.model, result_folder + "model.pt")
 
 
+def write_parameter_tracking(kwargs, exp):
+    result_folder = kwargs["result_folder"]
+    gradient_track = np.array(exp.optimizer.optimizer.gradient_track)
+    np.save(result_folder + "gradient_track_{}.npy". format(kwargs["seed"]),
+            gradient_track)
+    weight_decay_track = np.array(exp.optimizer.optimizer.weight_decay_track)
+    np.save(result_folder + "weight_decay_track_{}.npy". format(kwargs["seed"]),
+            weight_decay_track)
+
+
 def main():
     logging.basicConfig(level=logging.DEBUG)
     kwargs = parse_run_args()
     logging.info(kwargs)
     start_time = time.time()
+    if kwargs["seed"] is None:
+        assert "SLURM_ARRAY_TASK_ID" in os.environ
+        kwargs["seed"] = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    assert kwargs["seed"] < 5, "cannot handle seed > 4, implement cv logic"
     exp = setup_exp(**kwargs)
     exp.run()
     end_time = time.time()
@@ -391,6 +403,7 @@ def main():
     write_kwargs_and_epochs_dfs(kwargs, exp)
     make_final_predictions(kwargs, exp)
     save_model(kwargs, exp)
+    write_parameter_tracking(kwargs, exp)
 
 
 if __name__ == '__main__':
