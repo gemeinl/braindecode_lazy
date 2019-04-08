@@ -42,7 +42,7 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
     std_loss_final = np.std([df[i].train_loss.iloc[-1] for i in range(len(df))],
                             axis=0)
     l1 = ax1.plot(mean_loss, color="g",
-                  label="train_loss ({:.2f} +-{:.2f})".format(mean_loss_final,
+                  label="train_loss ({:.2f} $\pm$ {:.2f})".format(mean_loss_final,
                                                               std_loss_final))
 
     for i in range(len(df)):
@@ -53,7 +53,7 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
     std_loss_final = np.std([df[i].test_loss.iloc[-1] for i in range(len(df))],
                             axis=0)
     l2 = ax1.plot(mean_loss, color="r",
-                  label="test_loss ({:.2f} +-{:.2f})".format(mean_loss_final,
+                  label="test_loss ({:.2f} $\pm$ {:.2f})".format(mean_loss_final,
                                                              std_loss_final))
 
     ax1.set_xlabel('epoch')
@@ -81,7 +81,7 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
     std_misclass_final = np.std([df[i]["train_" + misclass_or_rmse].iloc[-1]
                                  * factor for i in range(len(df))], axis=0)
     l3 = ax2.plot(mean_misclass, linestyle="--", color="b",
-                  label="train_" + misclass_or_rmse + " ({:.2f} +-{:.2f})"
+                  label="train_" + misclass_or_rmse + " ({:.2f} $\pm$ {:.2f})"
                   .format(mean_misclass_final, std_misclass_final))
 
     for i in range(len(df)):
@@ -94,7 +94,7 @@ def plot_learning_with_two_scales(df, ylim, just_test=False, out_dir=None):
     std_misclass_final = np.std([df[i]["test_" + misclass_or_rmse].iloc[-1]
                                  * factor for i in range(len(df))], axis=0)
     l4 = ax2.plot(mean_misclass, linestyle="--", color="orange",
-                  label="test_" + misclass_or_rmse + " ({:.2f} +-{:.2f})"
+                  label="test_" + misclass_or_rmse + " ({:.2f} $\pm$ {:.2f})"
                   .format(mean_misclass_final, std_misclass_final))
 
     ax2.set_ylabel(second_y_label, color='orange')
