@@ -1,0 +1,46 @@
+,train_folder,batch_size,max_epochs,cuda,num_workers,task,n_recordings,shuffle_folds,n_folds,eval_folder,lazy_loading,result_folder,model_name,n_start_chans,n_chans,n_chan_factor,final_conv_length,model_constraint,init_lr,weight_decay,input_time_length,stride_before_pool,run_on_normals,run_on_abnormals
+# traditional configs,,,,,,,,,,,,,,,,,,,,,,,,
+# cv,,,,,,,,,,,,,,,,,,,,,,,,
+# deep,,,,,,,,,,,,,,,,,,,,,,,,
+deep_pathological,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,35,True,2,pathological,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/pathological/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+deep_gender,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+deep_age,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+shallow_pathological,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,35,True,2,pathological,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/pathological/cv/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+shallow_gender,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender/cv/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+shallow_age,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age/cv/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+,,,,,,,,,,,,,,,,,,,,,,,,
+# final eval,,,,,,,,,,,,,,,,,,,,,,,,
+# deep,,,,,,,,,,,,,,,,,,,,,,,,
+deep_pathological_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,35,True,2,pathological,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/pathological/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+deep_gender_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+deep_age_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,False
+shallow_pathological_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,35,True,2,pathological,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/pathological/eval/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+shallow_gender_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender/eval/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+shallow_age_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age/eval/,shallow,40,21,,35,,0.000625,0,6000,False,False,False
+,,,,,,,,,,,,,,,,,,,,,,,,
+# subsets,,,,,,,,,,,,,,,,,,,,,,,,
+# cv,,,,,,,,,,,,,,,,,,,,,,,,
+# normal subset configs,,,,,,,,,,,,,,,,,,,,,,,,
+deep_gender_normal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender_normal/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,True,False
+deep_age_normal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age_normal/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,True,False
+shallow_gender_normal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender_normal/cv/,shallow,40,21,,35,,0.000625,0,6000,False,True,False
+shallow_age_normal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age_normal/cv/,shallow,40,21,,35,,0.000625,0,6000,False,True,False
+,,,,,,,,,,,,,,,,,,,,,,,,
+# abnormal subset configs,,,,,,,,,,,,,,,,,,,,,,,,
+deep_gender_abnormal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender_abnormal/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,True
+deep_age_abnormal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age_abnormal/cv/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,True
+shallow_gender_abnormal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender_abnormal/cv/,shallow,40,21,,35,,0.000625,0,6000,False,False,True
+shallow_age_abnormal,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age_abnormal/cv/,shallow,40,21,,35,,0.000625,0,6000,False,False,True
+,,,,,,,,,,,,,,,,,,,,,,,,
+# eval,,,,,,,,,,,,,,,,,,,,,,,,
+# normal subset configs,,,,,,,,,,,,,,,,,,,,,,,,
+deep_gender_normal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender_normal/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,True,False
+deep_age_normal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age_normal/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,True,False
+shallow_gender_normal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender_normal/eval/,shallow,40,21,,35,,0.000625,0,6000,False,True,False
+shallow_age_normal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age_normal/eval/,shallow,40,21,,35,,0.000625,0,6000,False,True,False
+,,,,,,,,,,,,,,,,,,,,,,,,
+# abnormal subset configs,,,,,,,,,,,,,,,,,,,,,,,,
+deep_gender_abnormal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/gender_abnormal/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,True
+deep_age_abnormal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/deep/age_abnormal/eval/,deep,25,21,2,1,,0.01,0.0005,6000,True,False,True
+shallow_gender_abnormal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,gender,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/gender_abnormal/eval/,shallow,40,21,,35,,0.000625,0,6000,False,False,True
+shallow_age_abnormal_eval,/home/gemeinl/data/pre_100_Hz_without_rejecting/train/,64,50,True,2,age,,False,5,/home/gemeinl/data/pre_100_Hz_without_rejecting/eval/,False,/home/gemeinl/results/all_recs_100_hz/networks/shallow/age_abnormal/eval/,shallow,40,21,,35,,0.000625,0,6000,False,False,True
