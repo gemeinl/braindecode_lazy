@@ -14,6 +14,7 @@ class Tuh(Dataset):
         self.task = target
         assert data_folder.endswith("/"), "data_folder has to end with '/'"
         self.file_paths = read_all_file_names(data_folder, ".h5", key="time")
+        self.gender_int_map = {"F": 1, "M": 0}
         if n_recordings is not None:
             self.file_paths = self.file_paths[:n_recordings]
 
@@ -40,6 +41,12 @@ class Tuh(Dataset):
             y = np.array(y).astype(np.float32)
         else:
             assert self.task in ["pathological", "gender"], "unknown task"
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # hacky, not necessary in newer versions of preprocessed data
+            y = [self.gender_int_map[e]
+                 if e in self.gender_int_map.keys()
+                 else e
+                 for e in y]
             y = np.array(y).astype(np.int64)
         return X, y, pathologicals
 
