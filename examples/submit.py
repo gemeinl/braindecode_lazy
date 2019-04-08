@@ -4,8 +4,6 @@ import os
 
 from utils import parse_submit_args
 
-# TODO: seed solution is really ugly!
-
 
 def dict_to_cmd_args(d):
     cmd_args = []
@@ -55,10 +53,15 @@ def main(configs_file, conda_env_name, python_file, queue, python_path, start,
     # add n_parallel? 0-5:5
     # add time limit? --time=12:00:00"
 
+    # schedule to specific hosts?
+    # ti_hosts = ["metagpua", "metagpub", "metagpuc", "metagpud", "metagpue"]
+    # rtx_hosts = ["mlgpu01", "mlgpu02", "mlgpu03", "mlgpu04", "mlgpu05"]
+    # nodelist = ','.join(rtx_hosts)
+    # batch_submit += " --nodelist={}".format(nodelist)
+
     # sbatch -p meta_gpu-ti -w metagpub -c 4 jobs/slurmbjob.pbs
     for setting_i, (setting_name, setting) in enumerate(configs_df.iterrows()):
         config = configs_df.loc[setting_name].to_dict()
-        # n = int(config["n_folds"])
         if "num_workers" in config:
             num_workers = int(config["num_workers"])
         else:
