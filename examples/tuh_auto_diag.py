@@ -10,6 +10,10 @@ import time
 import sys
 import os
 
+sys.path.insert(1, "/home/gemeinl/code/NeuralArchitectureSearch/")
+sys.path.insert(1, "/home/gemeinl/code/braindecode_lazy/")
+
+# robins code
 from braindecode.torch_ext.schedulers import ScheduledOptimizer, CosineAnnealing
 from braindecode.torch_ext.util import np_to_var, var_to_np, set_random_seeds
 from braindecode.experiments.monitors import RuntimeMonitor, LossMonitor
@@ -20,13 +24,18 @@ from braindecode.models.shallow_fbcsp import ShallowFBCSPNet
 from braindecode.experiments.stopcriteria import MaxEpochs
 from braindecode.experiments.experiment import Experiment
 # from braindecode.torch_ext.optimizers import AdamW
+from braindecode.models.eegnet import EEGNetv4
 from braindecode.models.deep4 import Deep4Net
+
+# patryks code
+from src.deep_learning.pytorch.models.tcn_model import TemporalConvNet
+from src.deep_learning.pytorch.optimizer import ExtendedAdam
 
 # my imports
 from braindecode_lazy.experiments.monitors_lazy_loading import (
     LazyMisclassMonitor, RMSEMonitor, CroppedDiagnosisMonitor, RAMMonitor,
     compute_preds_per_trial)
-from braindecode_lazy.torch_ext.optimizers import AdamWWithTracking as AdamW
+from braindecode_lazy.torch_ext.optimizers import AdamWWithTracking
 from braindecode_lazy.datautil.iterators import LazyCropsFromTrialsIterator
 from braindecode_lazy.datasets.tuh_lazy import TuhLazy, TuhLazySubset
 # from braindecode_lazy.experiments.experiment import Experiment
@@ -36,8 +45,6 @@ from examples.utils import parse_run_args
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logging.info("test")
-
-sys.path.insert(1, "/home/gemeinl/code/braindecode_lazy/")
 
 
 def nll_loss_on_mean(preds, targets):
@@ -90,6 +97,8 @@ def setup_exp(
         run_on_normals,
         run_on_abnormals,
         seed,
+        l2_decay,
+        gradient_clip,
         ):
     info_msg = "using {}, {}".format(
         os.environ["SLURM_JOB_PARTITION"], os.environ["SLURMD_NODENAME"],)
@@ -135,7 +144,25 @@ def setup_exp(
             n_filters_4=int(n_start_chans * (n_chan_factor ** 3.0)),
             final_conv_length=final_conv_length,
             stride_before_pool=stride_before_pool).create_network()
-
+    elif model_name == 'eegnet':
+        model = EEGNetv4(
+            n_chans, n_classes,
+            input_time_length=input_time_length,
+            final_conv_length=final_conv_length).create_network()
+    elif model_name == "tcn":
+        assert task != "age", "what to change to do regression with tcn?!"
+        model = TemporalConvNet(
+            input_size=n_chans,
+            output_size=n_classes,
+            context_size=0,
+            num_channels=55,
+            num_levels=5,
+            kernel_size=16,
+            dropout=0.05270154233150525,
+            skip_mode=None,
+            use_context=0,
+            lasso_selection=0.0,
+            rnn_normalization=None)
     else:
         assert False, "unknown model name {:s}".format(model_name)
 
@@ -149,10 +176,13 @@ def setup_exp(
             new_model.add_module(name, module_)
         model = new_model
 
+    # maybe check if this works and wait / re-try after some time?
+    # in case of all cuda devices are busy
     if cuda:
         model.cuda()
 
-    to_dense_prediction_model(model)
+    if model_name != "tcn":
+        to_dense_prediction_model(model)
     logging.info("Model:\n{:s}".format(str(model)))
 
     test_input = np_to_var(np.ones((2, n_chans, input_time_length, 1),
@@ -271,7 +301,14 @@ def setup_exp(
     n_updates_per_period = n_updates_per_epoch * max_epochs
     logging.info("there are {} updates per epoch".format(n_updates_per_epoch))
 
-    adamw = AdamW(model.parameters(), init_lr, weight_decay=weight_decay)
+    if model_name == "tcn":
+        adamw = ExtendedAdam(model.parameters(), lr=init_lr,
+                             weight_decay=weight_decay, l2_decay=l2_decay,
+                             gradient_clip=gradient_clip)
+    else:
+        adamw = AdamWWithTracking(model.parameters(), init_lr,
+                                  weight_decay=weight_decay)
+
     scheduler = CosineAnnealing(n_updates_per_period)
     optimizer = ScheduledOptimizer(scheduler, adamw, schedule_weight_decay=True)
 
@@ -372,7 +409,8 @@ def make_final_predictions(kwargs, exp):
 
 def save_model(kwargs, exp):
     result_folder = kwargs["result_folder"]
-    th.save(exp.model, result_folder + "model.pt")
+    # TODO: save parameters of model instead. on load, re-instantiate model, load parameters
+    th.save(exp.model, result_folder + "model_{}.pt".format(kwargs["seed"]))
 
 
 def write_parameter_tracking(kwargs, exp):
