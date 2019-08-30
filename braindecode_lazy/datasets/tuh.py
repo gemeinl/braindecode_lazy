@@ -15,6 +15,7 @@ class Tuh(Dataset):
         assert data_folder.endswith("/"), "data_folder has to end with '/'"
         self.file_paths = read_all_file_names(data_folder, ".h5", key="time")
         self.gender_int_map = {"F": 1, "M": 0}
+        self.channels = None
         if n_recordings is not None:
             self.file_paths = self.file_paths[:n_recordings]
 
@@ -24,6 +25,8 @@ class Tuh(Dataset):
         X, y, pathologicals = [], [], []
         for i, file_ in enumerate(files):
             x = pd.read_hdf(file_, key="data")
+            if self.channels is None:
+                self.channels = list(x.columns)
             xdim, ydim = x.shape
             if xdim > ydim:
                 x = x.T

@@ -40,7 +40,7 @@ class TuhLazy(LazyDataset):
         self.task = target
         assert data_folder.endswith("/"), "data_folder has to end with '/'"
         self.file_paths = read_all_file_names(data_folder, ".h5", key="time")
-
+        self.channels = None
         if n_recordings is not None:
             self.file_paths = self.file_paths[:n_recordings]
 
@@ -49,6 +49,9 @@ class TuhLazy(LazyDataset):
     def pre_load(self, files):
         X, y, pathologicals = [], [], []
         for file_ in files:
+            if self.channels is None:
+                data_df = pd.read_hdf(file_, key="data")
+                self.channels = list(data_df.columns)
             # pandas read is slow
             # however, this is only called once upon creation of the data set
             info_df = pd.read_hdf(file_, key="info")
