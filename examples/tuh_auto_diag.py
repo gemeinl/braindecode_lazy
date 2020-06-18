@@ -409,8 +409,10 @@ def make_final_predictions(kwargs, exp):
 
 def save_model(kwargs, exp):
     result_folder = kwargs["result_folder"]
-    # TODO: save parameters of model instead. on load, re-instantiate model, load parameters
-    th.save(exp.model, result_folder + "model_{}.pt".format(kwargs["seed"]))
+    path = result_folder + "model_{}.pt".format(kwargs["seed"])
+    th.save(exp.model, path)
+    path = result_folder + "state_dict_{}.pt".format(kwargs["seed"])
+    th.save(exp.model.state_dict(), path)
 
 
 def write_parameter_tracking(kwargs, exp):
