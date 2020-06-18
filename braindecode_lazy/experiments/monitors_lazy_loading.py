@@ -1,4 +1,5 @@
-from sklearn.metrics import roc_auc_score, mean_squared_error
+from sklearn.metrics import roc_auc_score, mean_squared_error, \
+    mean_absolute_error
 import numpy as np
 import psutil
 import time
@@ -86,7 +87,7 @@ class RAMMonitor(object):
         out = {}
         process = psutil.Process(os.getpid())
         usage = process.memory_info().rss
-        out.update({"ram_usage": usage/1000000000})
+        out.update({"ram_usage": usage/1e9})
         return out
 
     def monitor_set(self, setname, all_preds, all_losses,
@@ -127,13 +128,23 @@ class RMSEMonitor(object):
         mean_preds_per_trial = np.array(mean_preds_per_trial).reshape(-1)
 
         out = {}
+        y = dataset.y
         if self.mean is not None and self.std is not None:
             mean_preds_per_trial = (mean_preds_per_trial * self.std) + self.mean
-        y = (dataset.y * self.std) + self.mean
+            y = (y * self.std) + self.mean
         assert mean_preds_per_trial.shape == y.shape
         mse_rec = mean_squared_error(y_pred=mean_preds_per_trial, y_true=y)
         rmse_rec = np.sqrt(mse_rec)
         out.update({"{}_rmse".format(setname): rmse_rec})
+
+        # also compute the MAE
+        mae = mean_absolute_error(y_pred=mean_preds_per_trial, y_true=y)
+        out.update({"{}_mae".format(setname): mae})
+
+        # also compute the MPE
+        percentual_error = np.abs(y - mean_preds_per_trial) / y
+        mpe = np.mean(percentual_error) * 100
+        out.update({"{}_mpe".format(setname): mpe})
         return out
 
 
